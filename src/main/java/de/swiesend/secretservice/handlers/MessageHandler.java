@@ -25,15 +25,8 @@ public class MessageHandler {
     public Object[] send(String service, String path, String iface, String method, String signature, Object... args) {
         try {
 
-            org.freedesktop.dbus.messages.Message message = new MyMethodCall(
-                    service,
-                    path,
-                    iface,
-                    method,
-                    signature,
-                    args
-            );
-
+            org.freedesktop.dbus.messages.MessageFactory msgFactory = connection.getMessageFactory();
+            org.freedesktop.dbus.messages.Message message = msgFactory.createMethodCall(service, path, iface, method, (byte) 0, signature, args);
 
             connection.sendMessage(message);
 
