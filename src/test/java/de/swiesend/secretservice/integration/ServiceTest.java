@@ -72,15 +72,31 @@ public class ServiceTest {
         assertEquals(128, input.length);
 
         Pair<Variant<byte[]>, ObjectPath> response = context.service.openSession(
-                Static.Algorithm.DH_IETF1024_SHA256_AES128_CBC_PKCS7, new Variant(input));
+                Static.Algorithm.DH_IETF1024_SHA256_AES128_CBC_PKCS7, new Variant<>(input));
         log.info(response.toString());
 
-        byte[] peerPublicKey = response.a.getValue();
+        Object value = response.a.getValue();
+        byte[] peerPublicKey;
+
+        if (value instanceof List) {
+            // Convert List<Byte> to byte[]
+            List<Byte> byteList = (List<Byte>) value;
+            peerPublicKey = new byte[byteList.size()];
+            for (int i = 0; i < byteList.size(); i++) {
+                peerPublicKey[i] = byteList.get(i);
+            }
+        } else if (value instanceof byte[]) {
+            peerPublicKey = (byte[]) value;
+        } else {
+            throw new IllegalArgumentException("Unexpected value type: " + value.getClass().getName());
+        }
+
         assertEquals(128, peerPublicKey.length);
 
         ObjectPath sessionPath = response.b;
         assertTrue(sessionPath.getPath().startsWith(Static.ObjectPaths.SESSION + "/s"));
     }
+
 
     @Test
     @Disabled

@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.util.List;
 
 public class TransportEncryption implements AutoCloseable {
 
@@ -79,16 +80,28 @@ public class TransportEncryption implements AutoCloseable {
 
         // open session with "Client DH pub key as an array of bytes" without prime or generator
         Pair<Variant<byte[]>, ObjectPath> osResponse = service.openSession(
-                Static.Algorithm.DH_IETF1024_SHA256_AES128_CBC_PKCS7, new Variant(ya.toByteArray()));
+                Static.Algorithm.DH_IETF1024_SHA256_AES128_CBC_PKCS7, new Variant<>(ya.toByteArray()));
 
         // transform peer's raw Y to a public key
         if (osResponse != null) {
-            yb = osResponse.a.getValue();
+            Object value = osResponse.a.getValue();
+            if (value instanceof List) {
+                List<Byte> byteList = (List<Byte>) value;
+                yb = new byte[byteList.size()];
+                for (int i = 0; i < byteList.size(); i++) {
+                    yb[i] = byteList.get(i);
+                }
+            } else if (value instanceof byte[]) {
+                yb = (byte[]) value;
+            } else {
+                throw new IllegalArgumentException("Unexpected value type");
+            }
             return true;
         } else {
             return false;
         }
     }
+
 
     public void generateSessionKey() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
         if (yb == null) {
